@@ -44,9 +44,9 @@ internal class Program
     static async Task<List<Price>> ProcessFlexElPriceList(HttpClient client)
     {
 
-        using FileStream stream = File.OpenRead(@"../../../SampleData/prices.json");
-        //await using Stream stream =
-        //    await client.GetStreamAsync("https://norlys.dk/api/flexel/getall?days=1&sector=DK2");
+        //using FileStream stream = File.OpenRead(@"../../../SampleData/prices.json");
+        await using Stream stream =
+            await client.GetStreamAsync("https://norlys.dk/api/flexel/getall?days=1&sector=DK2");
 
         var prices = await JsonSerializer.DeserializeAsync<List<Price>>(
             stream,
@@ -56,7 +56,7 @@ internal class Program
         return prices ?? new();
     }
 
-    public static void GenerateOutput(string time, PriceData? priceData)
+    public static void GenerateOutput(string context, PriceData? priceData)
     {
         if (priceData == null)
         {
@@ -64,7 +64,7 @@ internal class Program
         }
 
         Console.WriteLine("");
-        Console.WriteLine("--- Now " + time + " ---");
+        Console.WriteLine("--- " + context + " ---");
         Console.WriteLine("Time: " + priceData.Time + " Price: " + Math.Round(priceData.Value / 100, 2));
     }
 }
