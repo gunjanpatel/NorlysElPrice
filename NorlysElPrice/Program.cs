@@ -65,6 +65,6 @@ internal class Program
 
         Console.WriteLine("");
         Console.WriteLine("--- Now " + time + " ---");
-        Console.WriteLine("Time: " + priceData.Time + " Price: " + priceData.Value);
+        Console.WriteLine("Time: " + priceData.Time + " Price: " + Math.Round(priceData.Value / 100, 2));
     }
 }
