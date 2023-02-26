@@ -1,5 +1,7 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using System.Net.Http.Headers;
+using System.Reflection;
 using System.Text.Json;
 
 namespace NorlysElPrice;
@@ -8,6 +10,11 @@ internal class Program
 {
     static async Task Main(string[] args)
     {
+        if (args.Length > 0)
+        {
+            var fromDateOrTime = args[0];
+        }
+
         using HttpClient client = new();
 
         client.DefaultRequestHeaders.Accept.Clear();
@@ -16,15 +23,20 @@ internal class Program
             new MediaTypeWithQualityHeaderValue("application/json"));
         var prices = await ProcessFlexElPriceList(client);
 
-        foreach (var price in prices)
-        {
-            Console.WriteLine(price.PriceDate);
+        var selectedDisplayPrice = prices.First(p => p.PriceDate == DateTime.Today).DisplayPrices;
 
-            foreach(var displayPrice in price.DisplayPrices ?? new())
-            {
-                Console.WriteLine("Time: " + displayPrice.Time);
-                Console.WriteLine("Value: " + displayPrice.Value);
-            }
+        if (selectedDisplayPrice != null)
+        {
+            GenerateOutput("Lowest", selectedDisplayPrice.MinBy(p => p.Value));
+            GenerateOutput("Highest", selectedDisplayPrice.MaxBy(p => p.Value));
+            GenerateOutput(
+                    DateTime.Now.Hour.ToString(),
+                    selectedDisplayPrice
+                        .Where(
+                            p => p.Time != null && Int16.Parse(p.Time) == DateTime.Now.Hour
+                        ).FirstOrDefault()
+                );
+
         }
     }
 
@@ -42,5 +54,17 @@ internal class Program
             );
 
         return prices ?? new();
+    }
+
+    public static void GenerateOutput(string time, PriceData? priceData)
+    {
+        if (priceData == null)
+        {
+            return;
+        }
+
+        Console.WriteLine("");
+        Console.WriteLine("--- Now " + time + " ---");
+        Console.WriteLine("Time: " + priceData.Time + " Price: " + priceData.Value);
     }
 }
