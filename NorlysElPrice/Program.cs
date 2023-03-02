@@ -13,7 +13,7 @@ internal class Program
             var fromDateOrTime = args[0];
         }
         
-        var prices = await ProcessFlexElPriceList();
+        var prices = await getPriceList();
 
         var selectedDisplayPrice = prices.FirstOrDefault(p => p.PriceDate == DateTime.Today, new Price()).DisplayPrices;
 
@@ -37,17 +37,15 @@ internal class Program
             );
     }
 
-    private static async Task<List<Price>> ProcessFlexElPriceList()
+    private static async Task<List<Price>> getPriceList()
     {
-        var prices = await JsonSerializer.DeserializeAsync<List<Price>>(
+        return await JsonSerializer.DeserializeAsync<List<Price>>(
             await Client.GetData(),
             new JsonSerializerOptions() { PropertyNameCaseInsensitive = true }
-            );
-
-        return prices ?? new();
+            ) ?? new();
     }
 
-    public static void GenerateOutput(string context, PriceData? priceData)
+    private static void GenerateOutput(string context, PriceData? priceData)
     {
         if (priceData == null)
         {
