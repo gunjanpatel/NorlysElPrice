@@ -12,12 +12,10 @@ internal class Program
         {
             var fromDateOrTime = args[0];
         }
-        
-        var prices = await getPriceList();
 
-        var selectedDisplayPrice = prices.FirstOrDefault(p => p.PriceDate == DateTime.Today, new Price()).DisplayPrices;
+        var displayPrice = PriceService.Today(await PriceService.List());
 
-        if (selectedDisplayPrice == null)
+        if (displayPrice.Count <= 0)
         {
             Console.WriteLine("No matching data found");
 
@@ -26,23 +24,12 @@ internal class Program
 
         Console.WriteLine(DateTime.Today.ToString("dddd, dd MMMM yyyy"));
 
-        GenerateOutput("Lowest", selectedDisplayPrice.MinBy(p => p.Value));
-        GenerateOutput("Highest", selectedDisplayPrice.MaxBy(p => p.Value));
+        GenerateOutput("Lowest", PriceService.Lowest(displayPrice));
+        GenerateOutput("Highest", PriceService.Highest(displayPrice));
         GenerateOutput(
                 DateTime.Now.Hour.ToString(),
-                selectedDisplayPrice
-                    .Where(
-                        p => p.Time != null && Int16.Parse(p.Time) == DateTime.Now.Hour
-                    ).FirstOrDefault()
+                PriceService.Now(displayPrice)
             );
-    }
-
-    private static async Task<List<Price>> getPriceList()
-    {
-        return await JsonSerializer.DeserializeAsync<List<Price>>(
-            await Client.GetData(),
-            new JsonSerializerOptions() { PropertyNameCaseInsensitive = true }
-            ) ?? new();
     }
 
     private static void GenerateOutput(string context, PriceData? priceData)
