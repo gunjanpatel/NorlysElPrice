@@ -1,8 +1,6 @@
-﻿using System;
-using System.IO;
-using System.Net.Http.Headers;
-using System.Reflection;
-using System.Text.Json;
+﻿using System.Text.Json;
+using NorlysElPrice.DataObject;
+using NorlysElPrice.Service;
 
 namespace NorlysElPrice;
 
@@ -14,42 +12,35 @@ internal class Program
         {
             var fromDateOrTime = args[0];
         }
+        
+        var prices = await ProcessFlexElPriceList();
 
-        using HttpClient client = new();
+        var selectedDisplayPrice = prices.FirstOrDefault(p => p.PriceDate == DateTime.Today, new Price()).DisplayPrices;
 
-        client.DefaultRequestHeaders.Accept.Clear();
-
-        client.DefaultRequestHeaders.Accept.Add(
-            new MediaTypeWithQualityHeaderValue("application/json"));
-        var prices = await ProcessFlexElPriceList(client);
-
-        var selectedDisplayPrice = prices.First(p => p.PriceDate == DateTime.Today).DisplayPrices;
-
-        if (selectedDisplayPrice != null)
+        if (selectedDisplayPrice == null)
         {
-            GenerateOutput("Lowest", selectedDisplayPrice.MinBy(p => p.Value));
-            GenerateOutput("Highest", selectedDisplayPrice.MaxBy(p => p.Value));
-            GenerateOutput(
-                    DateTime.Now.Hour.ToString(),
-                    selectedDisplayPrice
-                        .Where(
-                            p => p.Time != null && Int16.Parse(p.Time) == DateTime.Now.Hour
-                        ).FirstOrDefault()
-                );
+            Console.WriteLine("No matching data found");
 
+            return;
         }
+
+        Console.WriteLine(DateTime.Today.ToString("dddd, dd MMMM yyyy"));
+
+        GenerateOutput("Lowest", selectedDisplayPrice.MinBy(p => p.Value));
+        GenerateOutput("Highest", selectedDisplayPrice.MaxBy(p => p.Value));
+        GenerateOutput(
+                DateTime.Now.Hour.ToString(),
+                selectedDisplayPrice
+                    .Where(
+                        p => p.Time != null && Int16.Parse(p.Time) == DateTime.Now.Hour
+                    ).FirstOrDefault()
+            );
     }
 
-
-    static async Task<List<Price>> ProcessFlexElPriceList(HttpClient client)
+    private static async Task<List<Price>> ProcessFlexElPriceList()
     {
-
-        //using FileStream stream = File.OpenRead(@"../../../SampleData/prices.json");
-        await using Stream stream =
-            await client.GetStreamAsync("https://norlys.dk/api/flexel/getall?days=1&sector=DK2");
-
         var prices = await JsonSerializer.DeserializeAsync<List<Price>>(
-            stream,
+            await Client.GetData(),
             new JsonSerializerOptions() { PropertyNameCaseInsensitive = true }
             );
 

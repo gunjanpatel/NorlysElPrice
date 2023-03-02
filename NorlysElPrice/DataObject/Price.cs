@@ -1,6 +1,4 @@
-﻿using System.Text.Json;
-
-namespace NorlysElPrice
+﻿namespace NorlysElPrice.DataObject
 {
     public record class Price()
     {
